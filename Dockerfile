@@ -1,10 +1,10 @@
-# Estágio 1: Build da aplicação usando Maven e JDK 17
-FROM maven:3.8.8-eclipse-temurin-17 AS build
+# Estágio 1: Build da aplicação usando Maven e JDK 21
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 COPY . .
 RUN mvn clean package -DskipTests
 
-# Estágio 2: Execução do JAR compilado
+# Estágio 2: Execução do JAR compilado usando JDK 21
 FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
