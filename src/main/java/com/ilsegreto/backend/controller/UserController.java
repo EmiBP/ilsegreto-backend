@@ -5,7 +5,6 @@ import java.util.Optional;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,8 +24,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/api/user")
-// 🚀 CORREÇÃO DO CORS: Liberadas as duas portas locais explicitamente para não travar nos seus testes
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"}, allowCredentials = "true")
+// 🚀 CORREÇÃO DO CORS: Alinhado para liberar as portas locais e a Vercel em ambiente de produção
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "https://ilsegreto-frontend.vercel.app"}, allowCredentials = "true")
 public class UserController {
 
     private final UserRepository userRepository;
@@ -35,22 +34,22 @@ public class UserController {
         this.userRepository = userRepository;
     }
 
+    // 🚀 ATUALIZADO: Agora recebe o e-mail diretamente como String extraída do Token JWT pelo filtro
     @GetMapping("/profile")
-    public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal OAuth2User principal) {
-        if (principal == null) {
+    public ResponseEntity<?> getUserProfile(@AuthenticationPrincipal String email) {
+        if (email == null) {
             return ResponseEntity.status(401).body("Utente non autenticato");
         }
-        String email = principal.getAttribute("email");
         return userRepository.findByEmail(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(404).build());
     }
 
+    // 🚀 ATUALIZADO: Agora valida e atualiza o perfil usando o e-mail extraído do JWT
     @PutMapping("/update")
-    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal OAuth2User principal, @RequestBody User dadosAtualizados) {
-        if (principal == null) return ResponseEntity.status(401).body("Non autorizzato");
+    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal String email, @RequestBody User dadosAtualizados) {
+        if (email == null) return ResponseEntity.status(401).body("Non autorizzato");
         
-        String email = principal.getAttribute("email");
         Optional<User> userOpt = userRepository.findByEmail(email);
         
         if (userOpt.isEmpty()) return ResponseEntity.status(404).body("Utente non trovato");
@@ -58,7 +57,7 @@ public class UserController {
         User user = userOpt.get();
         user.setTelefono(dadosAtualizados.getTelefono());
         
-        // 🚀 Processamento seguro do objeto Indirizzo
+        // Processamento seguro do objeto Indirizzo
         if (dadosAtualizados.getIndirizzo() != null && user.getIndirizzo() != null) {
             Indirizzo ind = user.getIndirizzo();
             Indirizzo indNovosDados = dadosAtualizados.getIndirizzo();
