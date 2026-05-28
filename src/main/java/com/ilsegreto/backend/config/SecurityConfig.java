@@ -54,7 +54,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🚀 BEAN DE CONFIGURAÇÃO GLOBAL DO CORS - Resolve o erro 'Failed to fetch'
+    // 🚀 BEAN DE CONFIGURAÇÃO GLOBAL DO CORS - Resolve o erro 'Failed to fetch' e o 401 pós-login
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -67,7 +67,13 @@ public class SecurityConfig {
         ));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
+        
+        // 🚀 CORREÇÃO CRUCIAL: Liberando os headers de Cookie para que a sessão não seja perdida entre Vercel e Render
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type", "Cookie", "Set-Cookie"));
+        
+        // Permite que o navegador do cliente leia os cabeçalhos de resposta de Cookies
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
+        
         configuration.setAllowCredentials(true); // Permite envio de cookies/sessões entre domínios
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
